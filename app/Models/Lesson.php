@@ -15,4 +15,10 @@ class Lesson extends Model
         'updated_at',
         'deleted_at',
     ];
+
+    protected $fillable = [
+        'course_id',
+        'name',
+        'content'
+    ];
 }

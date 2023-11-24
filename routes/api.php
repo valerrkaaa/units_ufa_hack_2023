@@ -31,11 +31,16 @@ Route::group([
 Route::group([
     'middleware' => ['api']
 ], function ($router){
-    Route::get('courses', 'CourseController@getLessonList');
+    Route::get('courses', 'CourseController@getCourseList');
+    Route::get('course', 'CourseController@getCourse');
+    Route::get('lesson', 'LessonController@getLesson');
 });
 
 Route::group([
     'middleware' => ['api', 'role:admin']
 ], function ($router){
-    Route::get('create_course', 'CourseController@getLessonList');
+    Route::post('create_course', 'CourseController@createCourse');
+    Route::delete('delete_course', 'CourseController@deleteCourse');
+    Route::post('create_lesson', 'LessonController@createLesson');
+    Route::delete('delete_lesson', 'LessonController@deleteLesson');
 });

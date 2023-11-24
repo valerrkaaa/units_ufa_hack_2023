@@ -17,6 +17,12 @@ class Course extends Model
         'deleted_at',
     ];
 
+    protected $fillable = [
+        'owner_id',
+        'name',
+        'description'
+    ];
+
     public function lessons()
     {
         return $this->hasMany(Lesson::class, 'course_id', 'id');
