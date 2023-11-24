@@ -22,6 +22,10 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function getRole(){
+        return $this->hasOne(Role::class, 'id', 'role_id');
+    }
+
     /**
      * The attributes that are mass assignable.
      *

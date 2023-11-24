@@ -18,10 +18,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::group([
     'middleware' => 'api'
 ], function ($router) {
@@ -30,4 +26,10 @@ Route::group([
     Route::post('logout', 'AuthController@logout');
     Route::post('refresh', 'AuthController@refresh');
     Route::post('me', 'AuthController@me');
+});
+
+Route::group([
+    'middleware' => ['api', 'role:pupil']
+], function ($router){
+    Route::get('test', 'CourseController@test');
 });
