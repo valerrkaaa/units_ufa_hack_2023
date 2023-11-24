@@ -29,7 +29,13 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => ['api', 'role:pupil']
+    'middleware' => ['api']
 ], function ($router){
-    Route::get('test', 'CourseController@test');
+    Route::get('courses', 'CourseController@getLessonList');
+});
+
+Route::group([
+    'middleware' => ['api', 'role:admin']
+], function ($router){
+    Route::get('create_course', 'CourseController@getLessonList');
 });
