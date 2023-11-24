@@ -20,7 +20,8 @@ class Course extends Model
     protected $fillable = [
         'owner_id',
         'name',
-        'description'
+        'description',
+        'embedding_path'
     ];
 
     public function lessons()

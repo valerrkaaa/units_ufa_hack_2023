@@ -7,6 +7,8 @@ use App\Models\Lesson;
 use App\Models\PassedLesson;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
@@ -24,16 +26,18 @@ class CourseController extends Controller
             $lessons = Lesson::all()->where('course_id', $course->id);
             $lessons_count = count($lessons);
 
-
             $passed_lessons = PassedLesson::whereHas('lesson', function ($query) use ($course) {
                 $query->where('course_id', $course->id);
-            })->get();  // TODO mark
+            })->get();
 
+            $avg_mark = $passed_lessons->avg('mark') ?? 0;
             $passed_lessons_count = count($passed_lessons);
+
             array_push($response, [
                 'course_data' => $course, 
                 'passed_lessons' => $passed_lessons_count, 
-                'lessons_count' => $lessons_count
+                'lessons_count' => $lessons_count,
+                'avg_mark' => $avg_mark
             ]);
         }
 
@@ -80,13 +84,22 @@ class CourseController extends Controller
                 'errors' => $validator->errors()->toArray(),
             ]);
         }
-
-        Course::create([
+        
+        $course = Course::create([
             'owner_id' => auth()->id(),
             'name' => $request->name,
             'description' => $request->description
         ]);
 
+        $ml_response = Http::post(
+            'http://26.46.215.75:2309/course/encode_course', 
+            ['description' => $request->description]
+        );
+        $embedding = json_decode($ml_response->getBody()->getContents())->description;
+        $embedding_path = 'embeddings/' . $course->id . '.emb';
+        Storage::put($embedding_path, $embedding);
+        $course->update(['embedding_path' => $embedding_path]);
+        
         return response()->json(['status' => 'success']);
     }
 
@@ -102,9 +115,8 @@ class CourseController extends Controller
         }
 
         $course = Course::findOrFail($request->id);
-        $course->delete();
-
         Lesson::where('course_id', $course->id)->delete();
+        $course->delete();
 
         return response()->json(['status' => 'success']);
     }

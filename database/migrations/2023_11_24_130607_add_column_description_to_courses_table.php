@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('courses', function (Blueprint $table) {
             $table->string('description')->nullable();
+            $table->string('embedding_path')->nullable();
         });
     }
 
@@ -23,6 +24,7 @@ return new class extends Migration
     {
         Schema::table('courses', function (Blueprint $table) {
             $table->dropColumn('description');
+            $table->dropColumn('embedding_path');
         });
     }
 };

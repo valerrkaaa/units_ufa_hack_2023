@@ -44,3 +44,8 @@ Route::group([
     Route::post('create_lesson', 'LessonController@createLesson');
     Route::delete('delete_lesson', 'LessonController@deleteLesson');
 });
+
+Route::group(['prefix' => 'ml'], function ($router){
+    Route::get('embeddings', 'MLController@getEmbeddings');
+    Route::get('courses', 'MLController@getCourse');
+});
