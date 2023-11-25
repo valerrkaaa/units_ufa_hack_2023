@@ -76,9 +76,10 @@ class LessonController extends Controller
         }
 
         $lesson = Lesson::findOrFail($request->lesson_id);
-        $file_path = 'lessons/' . $request->id . 'lsn';
+        $file_path = 'lessons/' . (string)($lesson->id) . '.lsn';
         Storage::put($file_path, $request->content);
         $lesson->update(['content' => $file_path]);
+        $lesson->save();
 
         return response()->json(['status' => 'success']);
     }

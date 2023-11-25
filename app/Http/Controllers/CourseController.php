@@ -88,6 +88,7 @@ class CourseController extends Controller
                 $join->on('lessons.id', '=', 'passed_lessons.lesson_id');
             })
             ->where('lessons.course_id', $course->id)
+            ->whereNull('lessons.deleted_at')
             ->select('lessons.id as lesson_id', 'lessons.name as lesson_name')
             ->addSelect(DB::raw('COALESCE(passed_lessons.mark, 0) as mark'))
             ->get();
