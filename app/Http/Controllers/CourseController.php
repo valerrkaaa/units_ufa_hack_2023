@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\PassedLesson;
+use App\Models\UserCourse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -18,33 +19,44 @@ class CourseController extends Controller
         $this->middleware('auth:api', ['except' => []]);
     }
 
-    public function getCourseList(Request $request){
-        $all_courses = Course::paginate(15);
+    public function getCourseList(Request $request)
+    {
+        $user_courses = UserCourse::where('user_id', auth()->id())->get();
+        $all_courses = Course::all();
 
-        $response = [];
-        foreach ($all_courses as $course){
-            $lessons = Lesson::all()->where('course_id', $course->id);
-            $lessons_count = count($lessons);
-
-            $passed_lessons = PassedLesson::whereHas('lesson', function ($query) use ($course) {
-                $query->where('course_id', $course->id);
-            })->get();
-
-            $avg_mark = $passed_lessons->avg('mark') ?? 0;
-            $passed_lessons_count = count($passed_lessons);
-
-            array_push($response, [
-                'course_data' => $course, 
-                'passed_lessons' => $passed_lessons_count, 
-                'lessons_count' => $lessons_count,
-                'avg_mark' => $avg_mark
-            ]);
+        $user_course_dict = [];
+        foreach ($user_courses as $user_course){
+            $user_course_dict[$user_course->course_id] = $user_course;
         }
 
-        return response()->json(['status' => 'success', 'courses' => $response, 'pagination']);
+        $response =[];
+        foreach ($all_courses as $course){
+            if (array_key_exists($course->id, $user_course_dict)){
+                array_push($response, [
+                    'id' => $course->id,
+                    'name' => $course->name,
+                    'description' => $course->description,
+                    'avg_mark' => $user_course_dict[$course->id]->avg_mark,
+                    'is_finished' => $user_course_dict[$course->id]->is_finished,
+                    'user_feedback' => $user_course_dict[$course->id]->user_feedback,
+                ]);
+            }
+            else {
+                array_push($response, [
+                    'id' => $course->id,
+                    'name' => $course->name,
+                    'description' => $course->description,
+                    'avg_mark' => '0',
+                    'is_finished' => false,
+                    'user_feedback' => 0,
+                ]);
+            }
+        }
+        return response()->json(['status' => 'success', 'courses' => $response]);
     }
 
-    public function getCourse(Request $request){
+    public function getCourse(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer',
         ]);
@@ -58,22 +70,23 @@ class CourseController extends Controller
         $course = Course::findOrFail($request->id);
 
         $lessons = DB::table('lessons')
-        ->leftJoin('passed_lessons', function ($join) {
-            $join->on('lessons.id', '=', 'passed_lessons.lesson_id');
-        })
-        ->where('lessons.course_id', $course->id)
-        ->select('lessons.id as lesson_id', 'lessons.name as lesson_name')
-        ->addSelect(DB::raw('COALESCE(passed_lessons.mark, 0) as mark'))
-        ->get();
+            ->leftJoin('passed_lessons', function ($join) {
+                $join->on('lessons.id', '=', 'passed_lessons.lesson_id');
+            })
+            ->where('lessons.course_id', $course->id)
+            ->select('lessons.id as lesson_id', 'lessons.name as lesson_name')
+            ->addSelect(DB::raw('COALESCE(passed_lessons.mark, 0) as mark'))
+            ->get();
 
         return response()->json([
-            'status' => 'success', 
-            'course_info' => $course, 
+            'status' => 'success',
+            'course_info' => $course,
             'lessons' => $lessons
         ]);
     }
 
-    public function createCourse(Request $request){
+    public function createCourse(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'description' => 'required|string'
@@ -84,7 +97,7 @@ class CourseController extends Controller
                 'errors' => $validator->errors()->toArray(),
             ]);
         }
-        
+
         $course = Course::create([
             'owner_id' => auth()->id(),
             'name' => $request->name,
@@ -92,18 +105,19 @@ class CourseController extends Controller
         ]);
 
         $ml_response = Http::post(
-            'http://26.46.215.75:2309/course/encode_course', 
+            'http://26.46.215.75:2309/course/encode_course',
             ['description' => $request->description]
         );
-        $embedding = json_decode($ml_response->getBody()->getContents())->description;
         $embedding_path = 'embeddings/' . $course->id . '.emb';
+        $embedding = json_encode(json_decode($ml_response->getBody()->getContents())->description);
         Storage::put($embedding_path, $embedding);
         $course->update(['embedding_path' => $embedding_path]);
-        
+
         return response()->json(['status' => 'success']);
     }
 
-    public function deleteCourse(Request $request){
+    public function deleteCourse(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer'
         ]);

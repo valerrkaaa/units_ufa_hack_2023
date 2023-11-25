@@ -42,8 +42,8 @@ class MLController extends Controller
         foreach ($courses as $course){
             $embedding = Storage::get($course->embedding_path);
             array_push($response, [
-                'id' => $courses->id,
-                'embedding' => $courses->$embedding,
+                'id' => $course->id,
+                'embedding' => json_decode($embedding),
             ]);
         }
 
