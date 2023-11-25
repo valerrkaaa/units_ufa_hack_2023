@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\CourseTag;
 use App\Models\Lesson;
 use App\Models\PassedLesson;
+use App\Models\Tag;
 use App\Models\UserCourse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +57,14 @@ class CourseController extends Controller
         return response()->json(['status' => 'success', 'courses' => $response]);
     }
 
+    public function getRecomendedCourselist(Request $request)
+    {
+        $response =[];
+
+        // todo ml-запрос
+        return response()->json(['status' => 'success', 'courses' => $response]);
+    }
+
     public function getCourse(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -98,18 +108,32 @@ class CourseController extends Controller
             ]);
         }
 
+        // создание курса
         $course = Course::create([
             'owner_id' => auth()->id(),
             'name' => $request->name,
             'description' => $request->description
         ]);
 
-        $ml_response = Http::post(
+        // теги
+        $all_tags = Tag::all();
+        dd($all_tags);
+        $tags_response = Http::post('todo', ['tags' => $all_tags]);   // todo тут жду массив с id тегов
+        $tags = json_decode($tags_response->getBody()->getContents())->tags;
+        foreach ($tags as $tag){
+            CourseTag::create([
+                'course_id' => $course->id,
+                'tag_id' => $tag
+            ]);
+        }
+
+        // создание эмбеддингов
+        $embedding_response = Http::post(
             'http://26.46.215.75:2309/course/encode_course',
             ['description' => $request->description]
         );
         $embedding_path = 'embeddings/' . $course->id . '.emb';
-        $embedding = json_encode(json_decode($ml_response->getBody()->getContents())->description);
+        $embedding = json_encode(json_decode($embedding_response->getBody()->getContents())->description);
         Storage::put($embedding_path, $embedding);
         $course->update(['embedding_path' => $embedding_path]);
 

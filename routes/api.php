@@ -32,6 +32,7 @@ Route::group([
     'middleware' => ['api']
 ], function ($router){
     Route::get('courses', 'CourseController@getCourseList');
+    Route::get('recomended_courses', 'CourseController@getRecomendedCourselist');
     Route::get('course', 'CourseController@getCourse');
     Route::get('lesson', 'LessonController@getLesson');
     Route::get('tags', 'TagsController@getTags');
@@ -50,4 +51,8 @@ Route::group([
 Route::group(['prefix' => 'ml'], function ($router){
     Route::get('embeddings', 'MLController@getEmbeddings');
     Route::get('courses', 'MLController@getCourse');
+});
+
+Route::group(['prefix' => 'game'], function ($router){
+    Route::get('test', 'GameController@test');
 });
