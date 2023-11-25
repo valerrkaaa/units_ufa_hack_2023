@@ -34,6 +34,8 @@ Route::group([
     Route::get('courses', 'CourseController@getCourseList');
     Route::get('course', 'CourseController@getCourse');
     Route::get('lesson', 'LessonController@getLesson');
+    Route::get('tags', 'TagsController@getTags');
+    Route::post('save_user_tags', 'TagsController@saveUserTags');
 });
 
 Route::group([
