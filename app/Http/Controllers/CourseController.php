@@ -33,6 +33,8 @@ class CourseController extends Controller
 
         $response =[];
         foreach ($all_courses as $course){
+            $tags = CourseTag::where('course_id', $course->id)->get();
+
             if (array_key_exists($course->id, $user_course_dict)){
                 array_push($response, [
                     'id' => $course->id,
@@ -41,6 +43,7 @@ class CourseController extends Controller
                     'avg_mark' => $user_course_dict[$course->id]->avg_mark,
                     'is_finished' => $user_course_dict[$course->id]->is_finished,
                     'user_feedback' => $user_course_dict[$course->id]->user_feedback,
+                    'tags' => $tags
                 ]);
             }
             else {
@@ -51,6 +54,7 @@ class CourseController extends Controller
                     'avg_mark' => '0',
                     'is_finished' => false,
                     'user_feedback' => 0,
+                    'tags' => $tags
                 ]);
             }
         }
@@ -108,34 +112,34 @@ class CourseController extends Controller
             ]);
         }
 
-        // создание курса
-        $course = Course::create([
-            'owner_id' => auth()->id(),
-            'name' => $request->name,
-            'description' => $request->description
-        ]);
+        // // создание курса
+        // $course = Course::create([
+        //     'owner_id' => auth()->id(),
+        //     'name' => $request->name,
+        //     'description' => $request->description
+        // ]);
 
         // теги
         $all_tags = Tag::all();
-        dd($all_tags);
-        $tags_response = Http::post('todo', ['tags' => $all_tags]);   // todo тут жду массив с id тегов
+        $tags_response = Http::post('http://26.46.215.75:2309/', ['description' => $request->description, 'tags' => $all_tags]);   // todo тут жду массив с id тегов
         $tags = json_decode($tags_response->getBody()->getContents())->tags;
-        foreach ($tags as $tag){
-            CourseTag::create([
-                'course_id' => $course->id,
-                'tag_id' => $tag
-            ]);
-        }
+        dd($tags);
+        // foreach ($tags as $tag){
+        //     CourseTag::create([
+        //         'course_id' => $course->id,
+        //         'tag_id' => $tag
+        //     ]);
+        // }
 
-        // создание эмбеддингов
-        $embedding_response = Http::post(
-            'http://26.46.215.75:2309/course/encode_course',
-            ['description' => $request->description]
-        );
-        $embedding_path = 'embeddings/' . $course->id . '.emb';
-        $embedding = json_encode(json_decode($embedding_response->getBody()->getContents())->description);
-        Storage::put($embedding_path, $embedding);
-        $course->update(['embedding_path' => $embedding_path]);
+        // // создание эмбеддингов
+        // $embedding_response = Http::post(
+        //     'http://26.46.215.75:2309/course/encode_course',
+        //     ['description' => $request->description]
+        // );
+        // $embedding_path = 'embeddings/' . $course->id . '.emb';
+        // $embedding = json_encode(json_decode($embedding_response->getBody()->getContents())->description);
+        // Storage::put($embedding_path, $embedding);
+        // $course->update(['embedding_path' => $embedding_path]);
 
         return response()->json(['status' => 'success']);
     }

@@ -45,6 +45,7 @@ Route::group([
     Route::post('create_course', 'CourseController@createCourse');
     Route::delete('delete_course', 'CourseController@deleteCourse');
     Route::post('create_lesson', 'LessonController@createLesson');
+    Route::post('save_lesson', 'LessonController@saveLessonData');
     Route::delete('delete_lesson', 'LessonController@deleteLesson');
 });
 

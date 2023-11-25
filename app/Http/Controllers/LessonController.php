@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class LessonController extends Controller
@@ -17,8 +18,7 @@ class LessonController extends Controller
     public function createLesson(Request $request){
         $validator = Validator::make($request->all(), [
             'course_id' => 'required|integer',
-            'name' => 'required|string',
-            'content' => 'required|string'
+            'name' => 'required|string'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -35,7 +35,7 @@ class LessonController extends Controller
         Lesson::create([
             'course_id' => $request->course_id,
             'name' => $request->name,
-            'content' => $request->content
+            'content' => ''
         ]);
 
         return response()->json(['status' => 'success']);
@@ -53,8 +53,34 @@ class LessonController extends Controller
         }
 
         $lesson = Lesson::findOrFail($request->id);
+        $content = Storage::get($lesson->content);
 
-        return response()->json(['status' => 'success', 'lesson' => $lesson]);
+        return response()->json(['status' => 'success', 'lesson' => [
+            'id' => $lesson->id,
+            'course_id' => $lesson->course_id,
+            'name' => $lesson->name,
+            'content' => $content
+        ]]);
+    }
+
+    public function saveLessonData(Request $request){
+        $validator = Validator::make($request->all(), [
+            'lesson_id' => 'required|integer',
+            'content' => 'required|string',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => "validator error",
+                'errors' => $validator->errors()->toArray(),
+            ]);
+        }
+
+        $lesson = Lesson::findOrFail($request->lesson_id);
+        $file_path = 'lessons/' . $request->id . 'lsn';
+        Storage::put($file_path, $request->content);
+        $lesson->update(['content' => $file_path]);
+
+        return response()->json(['status' => 'success']);
     }
 
     public function deleteLesson(Request $request){
